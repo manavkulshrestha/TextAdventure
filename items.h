@@ -14,6 +14,7 @@ char *item_name(Item *item);
 char *item_description(Item *item);
 Item *item_next(Item *item);
 Item *item_take(char *name, Item *head_ptr);
+Item *item_find(char *name, Item *head_ptr);
 void item_add(Item *items, Item *to_add);
 void item_print(Item *head_ptr);
 void item_free(Item *item);

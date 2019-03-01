@@ -3,6 +3,7 @@
 
 #include "items.h"
 
+#define ROOM_NO_ROOM 0
 #define ROOM_LOCKED 1
 #define ROOM_UNLOCKED 2
 
@@ -22,7 +23,7 @@ typedef struct Room {
 	struct Room *west;	
 	struct Room *up;	
 	struct Room *down;
-	int state;
+	int *state;
 } Room;
 
 Room *room(char *description, Item *items,
@@ -32,9 +33,9 @@ Room *room(char *description, Item *items,
 				    int state
                     );
 
-int check_direction(Room *current, int *direction);
-void room_connect(Room *current, Room *other, int *direction);
-void set_state(Room *room, int state);
+int check_direction(Room *current, int direction);
+void room_connect(Room *current, Room *other, int direction);
+void set_state(Room *room, int *state);
 void change_state(Room *room, int delta);
 void room_free(Room *room);
 

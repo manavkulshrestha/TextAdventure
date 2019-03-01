@@ -6,11 +6,19 @@
 Item *item(char* name, char* description, int count, int attribute, Item *next) {
 	Item *item = (Item *) malloc(sizeof(Item));
 
-	item->name = (char *) malloc(strlen(name)*sizeof(char));
-	strncpy(item->name, name, strlen(name));
+	int *len = (int *) malloc(sizeof(int));
+	*len = strlen(name);
+	item->name = (char *) malloc((*len+1)*sizeof(char));
+	strncpy(item->name, name, *len);
+	item->name[*len] = '\0';
 
-	item->description = (char *) malloc(strlen(description)*sizeof(char));
-	strncpy(item->description, description, strlen(description));
+	*len = strlen(description);
+	item->description = (char *) malloc((*len+1)*sizeof(char));
+	strncpy(item->description, description, *len);
+	item->description[*len] = '\0';
+
+	free(len);
+	len = NULL;
 
 	item->count = (int *) malloc(sizeof(int));
 	*(item->count) = count;
@@ -59,10 +67,23 @@ Item *item_take(char *name, Item *head_ptr) {
 	return NULL;
 }
 
-int *item_add(Item *items, Item *to_add) {
-	if(items == NULL)
-		return 0;//should at least have a dummy head
+Item *item_find(char *name, Item *head_ptr) {
+	if(head_ptr == NULL)
+		return;
 
+	head_ptr=head_ptr->next;
+
+	for(; head_ptr != NULL; head_ptr=head_ptr->next)
+		if(strcmp(head_ptr->name, name) == 0)
+			return head_ptr;
+
+	return NULL;
+}
+
+void item_add(Item *items, Item *to_add) {
+	if(items == NULL)
+		return;
+	
 	to_add->next = items->next;
 	items->next = to_add;
 }
