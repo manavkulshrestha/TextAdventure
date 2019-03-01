@@ -3,7 +3,7 @@
 #include <string.h>
 #include "items.h"
 
-Item *item(char* name, char* description, int *count, Item *next) {
+Item *item(char* name, char* description, int count, int attribute, Item *next) {
 	Item *item = (Item *) malloc(sizeof(Item));
 
 	item->name = (char *) malloc(strlen(name)*sizeof(char));
@@ -13,7 +13,10 @@ Item *item(char* name, char* description, int *count, Item *next) {
 	strncpy(item->description, description, strlen(description));
 
 	item->count = (int *) malloc(sizeof(int));
-	item->count = count;
+	*(item->count) = count;
+
+	item->attribute = (int *) malloc(sizeof(int));
+	*(item->attribute) = attribute;
 
 	item->next = next;
 	return item;
@@ -56,19 +59,29 @@ Item *item_take(char *name, Item *head_ptr) {
 	return NULL;
 }
 
-void *item_add(Item *items, Item *to_add) {
+int *item_add(Item *items, Item *to_add) {
+	if(items == NULL)
+		return 0;//should at least have a dummy head
+
 	to_add->next = items->next;
 	items->next = to_add;
 }
 
 void item_print(Item *head_ptr) {
-	Item *current_ptr = head_ptr;
-	printf("Items:");
 	if(head_ptr == NULL)
+		return;
+
+	head_ptr = head_ptr->next;
+
+	printf("Items:");
+	if(head_ptr == NULL) {
 		printf(" [empty]");
-	while(current_ptr != NULL) {
-		printf("\nItem name: %s, Item description: %s", current_ptr->name, current_ptr->description);
-	 	current_ptr = current_ptr->next;
+		return;
+	}
+
+	while(head_ptr != NULL) {
+		printf("\nItem name: %s, Item description: %s", head_ptr->name, head_ptr->description);
+	 	head_ptr = head_ptr->next;
 	}
 	printf("\n\n");
 }
