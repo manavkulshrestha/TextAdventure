@@ -107,6 +107,7 @@ Room *room_gen(const char* room_descriptions[ROOM_VARIATIONS], const char* item_
         while(check_direction(prev_room)!=0) { // Make sure direction isn't already occupied
             free(various_rands);
             various_rands = NULL;
+
             various_rands = random_number(1,6);
         }
         room_connect(prev_room, curr_room, various_rands);
@@ -144,7 +145,18 @@ Room *room_gen(const char* room_descriptions[ROOM_VARIATIONS], const char* item_
             various_rands2 = NULL;
 
             /* CONNECT EXTRANEOUS ROOM TO CURRENT ROOM */
-            room_connect(current_room, room(room_descriptions[current_room_index], items, NULL, NULL, NULL, NULL, NULL, NULL))
+            various_rands2 = random_number(1,6); // Randomize direction of new room with respect to old one
+            while(check_direction(prev_room)!=0) { // Make sure direction isn't already occupied
+                free(various_rands2);
+                various_rands2 = NULL;
+
+                various_rands2 = random_number(1,6);
+            }
+            room_connect(current_room, room(room_descriptions[current_room_index], items, NULL, NULL, NULL, NULL, NULL, NULL), various_rands2)
+            
+            free(various_rands2);
+            various_rands2 = NULL;
+            
             *rooms_remaining--;
             if(*rooms_remaining <= 0) {
                 free(current_room_index);
