@@ -7,22 +7,19 @@
 #define ROOM_LOCKED 1
 #define ROOM_UNLOCKED 2
 
-#define ROOM_NORTH 1
-#define ROOM_SOUTH 2
-#define ROOM_EAST 3
-#define ROOM_WEST 4
-#define ROOM_UP 5
-#define ROOM_DOWN 6
+#define ROOM_NORTH 0
+#define ROOM_SOUTH 1
+#define ROOM_EAST 2
+#define ROOM_WEST 3
+#define ROOM_UP 4
+#define ROOM_DOWN 5
+
+#define EXIT_COUNT 6
 
 typedef struct Room {
 	char *description;
 	struct Item *items;
-	struct Room *north;	
-	struct Room *south;	
-	struct Room *east;	
-	struct Room *west;	
-	struct Room *up;	
-	struct Room *down;
+	struct Room *exits[EXIT_COUNT];
 	int *state;
 } Room;
 

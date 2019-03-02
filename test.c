@@ -9,6 +9,7 @@
 #define DEFAULT_BACKPACK_SIZE 5
 #define ROOM_VARIATIONS 5
 #define ITEM_VARIATIONS 5
+#define MAX_ITEMS_IN_ROOM 5
 #define ROOM_COUNT 20
 #define INITIAL_GOPE 0
 #define DIRECTION_COUNT 6
@@ -42,122 +43,57 @@ int *random_number(int min_num, int max_num) {
     return result;
 }
 
-Item *rand_items(int *for_rand, int *current_room_index, int *current_item_index, char* room_descriptions[ROOM_VARIATIONS], char* item_possibilities[ROOM_VARIATIONS][ITEM_VARIATIONS][3]) {
-    Item *items = item("","",1,-10,NULL); // Dummy starter for items
-    for(int i = 0; i < *for_rand; i++) {
-        current_item_index = random_number(0, ITEM_VARIATIONS-1);
+Room *room_gen(int rooms_to_create, Room *prev_room, int direction, char* room_descriptions[ROOM_VARIATIONS], char* item_possibilities[ROOM_VARIATIONS][ITEM_VARIATIONS][3], bool key) {
+    if(rooms_to_create <= 0)
+        return;
 
-        item_add(items, item(item_possibilities[*current_room_index][*current_item_index][0],
-                        item_possibilities[*current_room_index][*current_item_index][1],
-                        1,
-                        atoi(item_possibilities[*current_room_index][*current_item_index][2]),
-                        NULL));
-        
-        free(current_item_index);
-        current_item_index = NULL;
+    int *num_items = random_number(2, MAX_ITEMS_IN_ROOM-1);//arbitrary range
+    int *room_type = random_number(0, ROOM_VARIATIONS-1);//any room possible
+    Item *room_items = rand_items(num_items, room_type, item_possibilities);
+
+    int *valid_exits = (int *) malloc(sizeof(int));
+    *valid_exits = EXIT_COUNT;//number of exist which will be recursively generated.
+
+    Room *current_room = room(room_descriptions[*room_type], room_items, NULL, NULL, NULL, NULL, NULL, NULL, (key) ? ROOM_LOCKED : ROOM_UNLOCKED);
+    if(prev_room != NULL) {
+        room_connect(prev_room, current_room, direction);
+        (*valid_exits)--;//don't want to create rooms in the same place.
     }
-    free(for_rand);
-    for_rand = NULL;
+    rooms_to_create--;
 
-    return items;
-}
-
-Room *room_gen(char* room_descriptions[ROOM_VARIATIONS], char* item_possibilities[ROOM_VARIATIONS][ITEM_VARIATIONS][3]) {
-    int *rooms_remaining = (int *) malloc(sizeof(int));
-    *rooms_remaining = ROOM_COUNT;
-
-    int *various_rands; // Various other random quantities (Items per room, links per room, etc.)
-    int *various_rands2; // Various other random quantities (Items per room, links per room, etc.)
-    int *current_room_index; // Room possibility index
-    int *current_item_index; // Item possibility index
-
-    /* INITIALIZE ENDING ROOM AND ITS ITEMS */
-    various_rands = random_number(2, 4); // Number of items in room
-    current_room_index = random_number(0, ROOM_VARIATIONS-1); // Update room possibility index
+    //partition rooms_to_create into EXIT_COUNT unequal random numbers
     
-    Room *ending_room = room(room_descriptions[*current_room_index], rand_items(various_rands, current_room_index, current_item_index, room_descriptions, item_possibilities), NULL, NULL, NULL, NULL, NULL, NULL, ROOM_UNLOCKED);
-    (*rooms_remaining)--;
 
-    free(current_room_index);
-    current_room_index = NULL;    
+    for(int i=0; i<EXIT_COUNT-1; i++) {
+        if(current_room->exits[i] == NULL) {
+            int *rooms_to_create_ = random_number(rooms);
 
-    /* At this point, a room is inialized. The ball is rolling and we now keep generating until no more rooms remain */
-    Room *prev_room = ending_room;
-    Room *current_room;
-    while(*rooms_remaining > 0) {
-
-        /* INITIALIZE NEW ROOM */
-        various_rands = random_number(2, 4); // Number of items in room
-        current_room_index = random_number(0, ROOM_VARIATIONS-1); // Update room possibility index
-
-
-        Item *items = rand_items(various_rands, current_room_index, current_item_index, room_descriptions, item_possibilities);
-
-        current_room = room(room_descriptions[*current_room_index], items, NULL, NULL, NULL, NULL, NULL, NULL, ROOM_UNLOCKED);
-        
-        /* CONNECT NEW ROOM TO PREVIOUS */
-        various_rands = random_number(1,6); // Randomize direction of new room with respect to old one
-        while(check_direction(prev_room, *various_rands) != ROOM_NO_ROOM) { // Make sure direction isn't already occupied
-            free(various_rands);
-            various_rands = NULL;
-
-            various_rands = random_number(1,6);
+            current_room->exits[i] = room_gen()
         }
-        room_connect(prev_room, current_room, *various_rands);
-        
-        free(various_rands);
-        various_rands = NULL;
-        
-        free(current_room_index);
-        current_room_index = NULL;
-        
-        (*rooms_remaining)--;
-        if(*rooms_remaining <= 0)
-            return current_room;
-        
-        
-        // /* MAKE EXTRANEOUS ROOMS */
-        // *various_rands = 0; // Number of 'extraneous' connections to room
-        // for(int i = 0; i < *various_rands; i++) {
-
-        //     /* CONNECT EXTRANEOUS ROOM TO CURRENT ROOM */
-        //     various_rands2 = random_number(1,6); // Randomize direction of new room with respect to old one
-        //     while(check_direction(prev_room, *various_rands2)!=0) { // Make sure direction isn't already occupied
-        //         free(various_rands2);
-        //         various_rands2 = NULL;
-
-        //         various_rands2 = random_number(1,6);
-        //     }
-
-        //     /* CONNECT EXTRANEOUS ROOM */
-        //     various_rands2 = random_number(2, 4); // Number of items in room
-        //     current_room_index = random_number(0, ROOM_VARIATIONS-1); // Update room possibility index
-        //     room_connect(current_room, room(room_descriptions[*current_room_index], rand_items(various_rands2, current_room_index, current_item_index, room_descriptions, item_possibilities), NULL, NULL, NULL, NULL, NULL, NULL, ROOM_UNLOCKED), *various_rands2);
-
-        //     free(various_rands2);
-        //     various_rands2 = NULL;
-            
-        //     (*rooms_remaining)--;
-        //     if(*rooms_remaining <= 0) {
-        //         free(current_room_index);
-        //         current_room_index = NULL;
-                
-        //         free(various_rands);
-        //         various_rands = NULL;
-
-        //         return current_room;
-        //     }
-        //     free(current_room_index);
-        //     current_room_index = NULL;
-        // }
-        free(various_rands);
-        various_rands = NULL;
-
-        prev_room = current_room;
-        current_room = NULL;
     }
 
     return current_room;
+}
+
+Item *rand_items(int *num_items, int *room_type, char *item_possibilities[ROOM_VARIATIONS][ITEM_VARIATIONS][3]) {
+    Item *items = item("", "", 0, -1, NULL);
+
+    for(int i=0; i<*num_items; i++) {
+        int *item_type = random_number(0, ITEM_VARIATIONS-1);
+
+        items_add(items, item(
+            item_possibilities[*room_type][*item_type][0],
+            item_possibilities[*room_type][*item_type][1],
+            1,
+            atoi(item_possibilities[*room_type][*item_type][2]),
+            NULL
+        ));
+
+        free(item_type);
+        item_type = NULL;
+    }
+
+    return items;
 }
 
 int main(void) {

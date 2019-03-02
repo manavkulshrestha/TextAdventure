@@ -8,7 +8,7 @@ Item *item(char* name, char* description, int count, int attribute, Item *next) 
 
 	int *len = (int *) malloc(sizeof(int));
 	*len = strlen(name);
-	item->name = (char *) malloc((*len+1)*sizeof(char));
+	item->name = (char *) malloc(((*len)+1)*sizeof(char));
 	strncpy(item->name, name, *len);
 	item->name[*len] = '\0';
 
@@ -69,7 +69,7 @@ Item *item_take(char *name, Item *head_ptr) {
 
 Item *item_find(char *name, Item *head_ptr) {
 	if(head_ptr == NULL)
-		return;
+		return NULL;
 
 	head_ptr=head_ptr->next;
 
@@ -89,10 +89,8 @@ void item_add(Item *items, Item *to_add) {
 }
 
 void item_print(Item *head_ptr) {
-	if(head_ptr == NULL)
-		return;
-
-	head_ptr = head_ptr->next;
+	if(head_ptr != NULL)
+		head_ptr = head_ptr->next;
 
 	printf("Items:");
 	if(head_ptr == NULL) {
@@ -101,10 +99,9 @@ void item_print(Item *head_ptr) {
 	}
 
 	while(head_ptr != NULL) {
-		printf("\nItem name: %s, Item description: %s", head_ptr->name, head_ptr->description);
+		printf("\n%s (x%i) -- %s", head_ptr->name, *(head_ptr->count) ,head_ptr->description);
 	 	head_ptr = head_ptr->next;
 	}
-	printf("\n\n");
 }
 
 void item_free(Item *item) {
