@@ -7,47 +7,78 @@
 
 #define BUFFER_LENGTH 100
 
-int main(void) {
-    char *buffer = (char *) malloc(BUFFER_LENGTH*sizeof(char));
-    int *buffer_length = (int *) malloc(sizeof(int));
+int *random_number(int min_num, int max_num) {
+    int *result = (int *) malloc(sizeof(int));
+    int *low_num = (int *) malloc(sizeof(int));
+    int *hi_num = (int *) malloc(sizeof(int));
 
-    char *command;
-    char *param;
+    *result = 0;
+    *low_num = 0;
+    *hi_num = 0;
 
-    scanf ("%[^\n]%*c", buffer);
-    *buffer_length = strlen(buffer);
-
-    //get index of space
-    int *space_index = (int *) malloc(sizeof(int));
-    *space_index = 0;
-    while(*space_index < *buffer_length && buffer[*space_index] != ' ')
-        (*space_index)++;
-
-    //copy everything before space_index into 'command'
-    command = (char *) malloc((*space_index+1)*sizeof(char));
-    strncpy(command, buffer, *space_index);
-    command[*space_index] = '\0';
-
-    // if there is more than one word, copy everyhting after space_index into 'param'
-    // printf("'%i'\n", *space_index);
-    // printf("'%i'\n", *buffer_length);
-
-    if(*space_index != *buffer_length){
-        int *len = (int *) malloc(sizeof(int));
-        *len = BUFFER_LENGTH-*space_index-1;
-
-        param = (char *) malloc((*len+1)*sizeof(char));
-        strncpy(param, buffer+*space_index+1, *len);
-        param[*len] = '\0';
-
-        free(len);
-        len = NULL;
+    if (min_num < max_num) {
+        *low_num = min_num;
+        *hi_num = max_num + 1;
     } else {
-        param = NULL;
+        *low_num = max_num + 1; 
+        *hi_num = min_num;
     }
 
-    printf("'%s'\n", command);
-    printf("'%s'\n", param);
+    *result = (rand() % (*hi_num - *low_num)) + *low_num;
+
+    free(low_num);
+    low_num = NULL;
+
+    free(hi_num);
+    hi_num = NULL;
+    
+    return result;
+}
+
+int main(void) {
+    srand(time(NULL));
+    int rooms_to_create = 19;
+    int *valid_exits = (int *) malloc(sizeof(int));
+    *valid_exits = 5;
+
+//SETUPEND
+
+    int *parts = (int *) malloc((*valid_exits) * (sizeof(int)));
+    int *partial_sum = (int *) malloc(sizeof(int));
+    int *rand_upper_incbound = (int *) malloc(sizeof(int));
+    *rand_upper_incbound = rooms_to_create/((*valid_exits)-1);
+
+    for(int i=0; i<(*valid_exits)-1; i++) {
+        int* part = random_number(0, *rand_upper_incbound);
+        (*partial_sum) += (*part);
+
+        parts[i] = *part;
+
+        free(part);
+        part = NULL;
+    }
+
+    parts[(*valid_exits)-1] = rooms_to_create - *partial_sum;
+
+//TEST
+    int sum = 0;
+    for(int i=0; i<*valid_exits; i++) {
+        printf("%i ", parts[i]);
+        sum += parts[i];
+    }
+    printf("%i ", sum);
+
+
+//TESTEND
+
+    free(parts);
+    parts = NULL;
+
+    free(partial_sum);
+    partial_sum = NULL;
+
+    free(rand_upper_incbound);
+    rand_upper_incbound = NULL;
 
     return 0;
 }

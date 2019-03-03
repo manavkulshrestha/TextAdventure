@@ -66,6 +66,7 @@ Room *room_gen(char* room_descriptions[ROOM_VARIATIONS], char* item_possibilitie
     int *rooms_remaining = (int *) malloc(sizeof(int));
     *rooms_remaining = ROOM_COUNT;
 
+    /* ALOOCATED STUFF FOR MEMORY MANAGEMENT */
     int *various_rands; // Various other random quantities (Items per room, links per room, etc.)
     int *various_rands2; // Various other random quantities (Items per room, links per room, etc.)
     int *current_room_index; // Room possibility index
@@ -92,7 +93,10 @@ Room *room_gen(char* room_descriptions[ROOM_VARIATIONS], char* item_possibilitie
 
 
         Item *items = rand_items(various_rands, current_room_index, current_item_index, room_descriptions, item_possibilities);
-
+        printf("\n%i",*current_room_index);
+        if(*current_room_index == 4) {
+            *(prev_room->state) = ROOM_LOCKED;
+        }
         current_room = room(room_descriptions[*current_room_index], items, NULL, NULL, NULL, NULL, NULL, NULL, ROOM_UNLOCKED);
         
         /* CONNECT NEW ROOM TO PREVIOUS */
