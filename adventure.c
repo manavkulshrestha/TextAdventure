@@ -9,11 +9,19 @@
 #define DEFAULT_BACKPACK_SIZE 5
 #define ROOM_VARIATIONS 5
 #define ITEM_VARIATIONS 5
-#define ROOM_COUNT 20
+#define ROOM_COUNT 10
 #define INITIAL_GOPE 0
-#define DIRECTION_COUNT 6
 #define BUFFER_LENGTH 100
 
+/*
+    int min_num - lower bound for random number generation (inclusive)
+    int man_num - Upper bound for random number generation (inclusive)
+
+    Generates a random number in range min_num and max_num
+
+    returns:
+    int *result - random number between min_num and max_num
+*/
 int *random_number(int min_num, int max_num) {
     int *result = (int *) malloc(sizeof(int));
     int *low_num = (int *) malloc(sizeof(int));
@@ -42,9 +50,20 @@ int *random_number(int min_num, int max_num) {
     return result;
 }
 
-Item *rand_items(int *for_rand, int *current_room_index, int *current_item_index, char* room_descriptions[ROOM_VARIATIONS], char* item_possibilities[ROOM_VARIATIONS][ITEM_VARIATIONS][3]) {
-    Item *items = item("","",1,-10,NULL); // Dummy starter for items
-    for(int i = 0; i < *for_rand; i++) {
+/*
+    int *num_items - Number of items to be generated
+    int *current_room_index - Index denoting what type of room the items will be placed in
+    int *key_flag - This is modified depending on whether a Door Key item is generated for the room
+    char *item_possibilities[][][] - A pool containing all the item possibilities (name, description, attribute), ordered by room type
+
+    Generates a Linked List of Items to be placed in a room.
+
+    return:
+    Items *items - a Linked List of items which contains num_items items, chosen randomly from the pool item_possibilities, depending on the current_room_index
+*/
+Item *rand_items(int *num_items, int *current_room_index, int *current_item_index, int *key_flag, char *item_possibilities[ROOM_VARIATIONS][ITEM_VARIATIONS][3]) {
+    Item *items = item("","",1,-1,NULL); // Dummy starter for items
+    for(int i = 0; i < *num_items; i++) {
         current_item_index = random_number(0, ITEM_VARIATIONS-1);
 
         item_add(items, item(item_possibilities[*current_room_index][*current_item_index][0],
@@ -52,51 +71,63 @@ Item *rand_items(int *for_rand, int *current_room_index, int *current_item_index
                         1,
                         atoi(item_possibilities[*current_room_index][*current_item_index][2]),
                         NULL));
-        
+        if(atoi(item_possibilities[*current_room_index][*current_item_index][2]) == 0)
+            *key_flag = 1;
         free(current_item_index);
         current_item_index = NULL;
     }
-    free(for_rand);
-    for_rand = NULL;
+    free(num_items);
+    num_items = NULL;
 
     return items;
 }
 
-Room *room_gen(char* room_descriptions[ROOM_VARIATIONS], char* item_possibilities[ROOM_VARIATIONS][ITEM_VARIATIONS][3]) {
-    int *rooms_remaining = (int *) malloc(sizeof(int));
-    *rooms_remaining = ROOM_COUNT;
+/*
+    char *room_descriptions[] - A pool containing descriptions for all room variations
+    char *item_possibilities[][][] -  A pool containing all the item possibilities (name, description, attribute), ordered by room type
 
-    /* ALOOCATED STUFF FOR MEMORY MANAGEMENT */
+    Generates ROOM_COUNT number of rooms linked to eachother in random directions from the top down.
+    The basic algorithm is: generate final room, then sequentially generate connections in random directions until there are no more rooms to generate
+
+    returns:
+    Room *current_room - the final room generated (starting room)
+*/
+Room *room_gen(char *room_descriptions[ROOM_VARIATIONS], char *item_possibilities[ROOM_VARIATIONS][ITEM_VARIATIONS][3]) {
+    int *rooms_remaining = (int *) malloc(sizeof(int));
+    *rooms_remaining = ROOM_COUNT; // Keep track of how many rooms have been generated
+
+    /* ALLOCATED STUFF FOR MEMORY MANAGEMENT */
     int *various_rands; // Various other random quantities (Items per room, links per room, etc.)
     int *various_rands2; // Various other random quantities (Items per room, links per room, etc.)
     int *current_room_index; // Room possibility index
     int *current_item_index; // Item possibility index
+    int *key_flag = (int *) malloc(sizeof(int)); // Flag to keep track of most recently generated key. If key is 1, the next room will be locked
+    *key_flag = 0;
 
     /* INITIALIZE ENDING ROOM AND ITS ITEMS */
     various_rands = random_number(2, 4); // Number of items in room
     current_room_index = random_number(0, ROOM_VARIATIONS-1); // Update room possibility index
     
-    Room *ending_room = room(room_descriptions[*current_room_index], rand_items(various_rands, current_room_index, current_item_index, room_descriptions, item_possibilities), NULL, NULL, NULL, NULL, NULL, NULL, ROOM_UNLOCKED);
-    (*rooms_remaining)--;
+    Room *ending_room = room("Congratulations! This is the final room!", NULL, NULL, NULL, NULL, NULL, NULL, NULL, ROOM_FINAL);
+    *key_flag = 0;
+    (*rooms_remaining)--; // One less room remaining
 
-    free(current_room_index);
+    free(current_room_index); // Free for later use
     current_room_index = NULL;    
 
     /* At this point, a room is inialized. The ball is rolling and we now keep generating until no more rooms remain */
     Room *prev_room = ending_room;
     Room *current_room;
-    while(*rooms_remaining > 0) {
+    while(*rooms_remaining > 0) { // Terminate loop when there are no more rooms left to generate
 
         /* INITIALIZE NEW ROOM */
         various_rands = random_number(2, 4); // Number of items in room
         current_room_index = random_number(0, ROOM_VARIATIONS-1); // Update room possibility index
 
-
-        Item *items = rand_items(various_rands, current_room_index, current_item_index, room_descriptions, item_possibilities);
-        printf("\n%i",*current_room_index);
-        if(*current_room_index == 4) {
+        Item *items = rand_items(various_rands, current_room_index, current_item_index, key_flag, item_possibilities);
+        if(*key_flag == 1 && *(prev_room->state) != ROOM_FINAL) 
             *(prev_room->state) = ROOM_LOCKED;
-        }
+        *key_flag = 0;
         current_room = room(room_descriptions[*current_room_index], items, NULL, NULL, NULL, NULL, NULL, NULL, ROOM_UNLOCKED);
         
         /* CONNECT NEW ROOM TO PREVIOUS */
@@ -107,64 +138,29 @@ Room *room_gen(char* room_descriptions[ROOM_VARIATIONS], char* item_possibilitie
 
             various_rands = random_number(1,6);
         }
-        room_connect(prev_room, current_room, *various_rands);
+        room_connect(prev_room, current_room, *various_rands); // Connect the previous room and the room we just generated
         
-        free(various_rands);
-        various_rands = NULL;
-        
-        free(current_room_index);
+        free(current_room_index); // Free for later use
         current_room_index = NULL;
-        
-        (*rooms_remaining)--;
-        if(*rooms_remaining <= 0)
-            return current_room;
-        
-        
-        // /* MAKE EXTRANEOUS ROOMS */
-        // *various_rands = 0; // Number of 'extraneous' connections to room
-        // for(int i = 0; i < *various_rands; i++) {
 
-        //     /* CONNECT EXTRANEOUS ROOM TO CURRENT ROOM */
-        //     various_rands2 = random_number(1,6); // Randomize direction of new room with respect to old one
-        //     while(check_direction(prev_room, *various_rands2)!=0) { // Make sure direction isn't already occupied
-        //         free(various_rands2);
-        //         various_rands2 = NULL;
-
-        //         various_rands2 = random_number(1,6);
-        //     }
-
-        //     /* CONNECT EXTRANEOUS ROOM */
-        //     various_rands2 = random_number(2, 4); // Number of items in room
-        //     current_room_index = random_number(0, ROOM_VARIATIONS-1); // Update room possibility index
-        //     room_connect(current_room, room(room_descriptions[*current_room_index], rand_items(various_rands2, current_room_index, current_item_index, room_descriptions, item_possibilities), NULL, NULL, NULL, NULL, NULL, NULL, ROOM_UNLOCKED), *various_rands2);
-
-        //     free(various_rands2);
-        //     various_rands2 = NULL;
-            
-        //     (*rooms_remaining)--;
-        //     if(*rooms_remaining <= 0) {
-        //         free(current_room_index);
-        //         current_room_index = NULL;
-                
-        //         free(various_rands);
-        //         various_rands = NULL;
-
-        //         return current_room;
-        //     }
-        //     free(current_room_index);
-        //     current_room_index = NULL;
-        // }
-        free(various_rands);
+        free(various_rands); // Free for later use
         various_rands = NULL;
 
-        prev_room = current_room;
+        (*rooms_remaining)--; // One less room remaining
+        if(*rooms_remaining <= 0)
+            break;
+
+        prev_room = current_room; // Set up for the next iteration
         current_room = NULL;
     }
-
     return current_room;
 }
 
+/*
+    Main function. This is where the game takes place
+*/
 int main(void) {
+    // Pools for random room and item generation
     char *room_descriptions[ROOM_VARIATIONS] = {
         "Library. It has books... not sure how you're supposed to import this.",
         "Shrine Room. A worn out inscription that seems to say -- T*m R*ch*rds.",
@@ -211,6 +207,7 @@ int main(void) {
         }
     };
 
+    // to easily convert int representing a direction to a char * for comparision.
     char *directions[EXIT_COUNT] = {
         "north",
         "south",
@@ -220,6 +217,7 @@ int main(void) {
         "down"
     };
     
+    //seeds the random number generator
     srand(time(NULL));
 
     //Current gope
@@ -230,15 +228,15 @@ int main(void) {
     int *backpack_size = (int *) malloc(sizeof(int));
     *backpack_size = DEFAULT_BACKPACK_SIZE;
 
-    //number of different items player has
+    //number of different item types player has
     int *item_count = (int *) malloc(sizeof(int));
     *item_count = 0;
 
     // backpack (linked list of items)
     Item *backpack = (Item *) malloc(*backpack_size*sizeof(Item));
 
+    // The room the player is currently in
     Room *current_room;
-    // current_room = room_gen(room_descriptions, item_possibilities);
     current_room = room_gen(room_descriptions, item_possibilities);
 
     //used for input parsing
@@ -251,7 +249,7 @@ int main(void) {
         // get input including spaces
         int *buffer_length = (int *) malloc(sizeof(int));
 
-        scanf ("%[^\n]%*c", buffer);
+        scanf("%[^\n]%*c", buffer);
         *buffer_length = strlen(buffer);
 
         //get index of space
@@ -280,17 +278,21 @@ int main(void) {
             param = NULL;
         }
         
+        // GO command
         if(strcmp(command, "go") == 0 && param != NULL) {
             for(int direction_index=0; direction_index<EXIT_COUNT; direction_index++) {
                 if(strcmp(directions[direction_index], param) == 0) {
 
+                    // room exit doesn't exit/is a wall
                     if(current_room->exits[direction_index] == NULL) {
                         printf("Do you want to Seg fault? Because that's how you Seg fault");
 
-                    } else if(*(current_room->exits[direction_index]->state) == ROOM_UNLOCKED) {
+                    // room is unlocked (or final room, since the final room is "unlocked", but has a different state)
+                    } else if(*(current_room->exits[direction_index]->state) == ROOM_UNLOCKED || *(current_room->exits[direction_index]->state) == ROOM_FINAL) {
                         current_room = current_room->exits[direction_index];
                         printf("You go through the %s exit", directions[direction_index]);
 
+                    // room is locked
                     } else if(*(current_room->exits[direction_index]->state) == ROOM_LOCKED) {
                         printf("Your question is 'Can I pass?' But, Prof. Joe Chiu has a question for you!\n");
                         printf("...And you don't know the answer. Maybe someone left some solutions lying around.\n");
@@ -299,31 +301,33 @@ int main(void) {
                 }
             }
             
+        // LOOK command
         } else if(strcmp(command, "look") == 0) {
             int *room_state = (int *) malloc(sizeof(int));
 
             printf("You find yourself in a %s\n\n", current_room->description);
 
+            // Printing out states of all exits
             for(int direction_index=0; direction_index<EXIT_COUNT; direction_index++) {
                 printf("The %s exit leads to ", directions[direction_index]);
-                if((*room_state = check_direction(current_room, direction_index)) == ROOM_UNLOCKED) {
+                if((*room_state = check_direction(current_room, direction_index)) == ROOM_UNLOCKED || (*room_state = check_direction(current_room, direction_index)) == ROOM_FINAL) {
                     printf("an unlocked room");
                 } else if(*room_state == ROOM_LOCKED) {
                     printf("a locked room");
                 } else {
                     printf("nothing. It's solid concrete");
                 }
-                printf(" ROOM STATE: %i", *room_state);
                 printf("\n");
             }
+            // Printing out the items in the room
             printf("\nRoom ");
             item_print(current_room->items);
 
+            // Printing out contents of backpack
             printf("\n\nBackpack ");
             item_print(backpack);
             
-            printf("ROOM STATE: %i", *(current_room->state));
-
+            // Freeing the temporary variable used to check room states
             free(room_state);
             room_state = NULL;
             
@@ -331,12 +335,13 @@ int main(void) {
             //temporarily take item from room (might be returned if backpack is full)
             Item *room_item = item_take(param, current_room->items);
 
-            // item is in room
+            // check whether item is in room
             if(room_item != NULL) {
                 Item *backpack_item = item_find(param, backpack);
 
+                // check whether player already has said item
                 if(backpack_item == NULL) {
-                    //player doesn't already have item.
+                    //check whether player has enough space for item
                     if(*item_count < *backpack_size) {
                         item_add(backpack, room_item);
                         (*item_count)++;
@@ -347,7 +352,7 @@ int main(void) {
                         printf("You can't hold more item types. Either drop some or get better at memory management");
                     }
                 } else {
-                    //player has already has item.
+                    // if player already had said item, increase the count for the item in the backpack and free the one from the room
                     *(backpack_item->count) += *(room_item->count);
                     printf("Took item '%s' (x%i)", room_item->name, *(room_item->count));
                     item_free(room_item);
@@ -357,9 +362,12 @@ int main(void) {
                 printf("Item '%s' not found", param);
             }
 
+        // DROP command
         } else if(strcmp(command, "drop") == 0 && param != NULL) {
+            // taking item from backpack
             Item *temp = item_take(param, backpack);
 
+            // checking if item was found in backpack
             if(temp != NULL) {
                 printf("Dropped item '%s' (x%i)", temp->name, *(temp->count));
                 item_add(current_room->items, temp);
@@ -369,55 +377,75 @@ int main(void) {
                 printf("Item '%s' not found", param);
             }
 
+        // USE command
         } else if(strcmp(command, "use") == 0 && param != NULL) {
+            // finds item to use (May not be consumed)
             Item *temp = item_find(param, backpack);
 
+            // checking if item was found in backpack
             if(temp == NULL) {
                 printf("Item not '%s' found", param);
                 
             } else {
-                if(*(temp->attribute) < 0) {//unusable item
+                // -1 attribute means the item is useless
+                if(*(temp->attribute) < 0) {
                     printf("You can't really use that item");
                     item_add(backpack, temp);
 
-                } else if(*(temp->attribute) == 0) {//key
+                // 0 attribute means the item is a key
+                } else if(*(temp->attribute) == 0) {
+                     //"north\0" and "south\0" are 6 big
+                    char *dir_buffer = (char *) malloc(6*sizeof(char));
+                    // getting which exit to use key on
                     printf("Which exit?: ");
-                    scanf("%s", buffer);
+                    scanf("%[^\n]%*c", dir_buffer);
 
+                    // iterating to convert char * of direction into an int to be used for state comparision
                     for(int direction_index=0; direction_index<EXIT_COUNT; direction_index++) {
-                        if(strcmp(directions[direction_index], param) == 0) {
+                        if(strcmp(directions[direction_index], dir_buffer) == 0) {
                             if(current_room->exits[direction_index] == NULL) {
                                 printf("That's not how any of this works.");
 
-                            } else if(*(current_room->exits[direction_index]->state) == ROOM_UNLOCKED) {
+                            } else if(*(current_room->exits[direction_index]->state) == ROOM_UNLOCKED || *(current_room->exits[direction_index]->state) == ROOM_FINAL) {
                                 printf("This door is already unlocked");
 
                             } else if(*(current_room->exits[direction_index]->state) == ROOM_LOCKED) {
                                 printf("Prof. Joe Chiu accepts your answer and lets you pass");
                                 (*(temp->count))--;
-
+                                *(current_room->exits[direction_index]->state) = ROOM_UNLOCKED;
                             }
                             break;
                         }
                     }
 
-                } else if(*(temp->attribute) == 1) {//book}
+                    // freeing temporary buffer used to get input
+                    free(dir_buffer);
+                    dir_buffer = NULL;
+
+                // 1 attribute signifies that item is a book
+                } else if(*(temp->attribute) == 1) {
+                    // increases backpack by 1. Generalized so it can be scaled later
                     (*backpack_size) += *(temp->attribute);
                     printf("You've gotten smarter and thus, better at memory management. Backpack size increased by %i", *(temp->attribute));
+                    //consumes one book
                     (*(temp->count))--;
 
                 } else {
-                    // comparing a character in description to see what the item s used for
+                    // temporary variable to store length of description
                     int *len = (int *) malloc(sizeof(int));
                     *len = strlen(temp->description);
 
+                    // all "special" items have a ')' character at the end of their description. Ex. (Emrour)
                     if(temp->description[*len-1] == ')') {
-                        if(temp->description[*len-2] =='e') {//gope
+                        // comparing second last character to item is supposed to do
+                        if(temp->description[*len-2] =='e') {//increase gope
                             *gope += *(temp->attribute);
                             printf("You feel nourished. Your gope level is now at %i", *gope);
+                            //consumes one one count of item
                             (*(temp->count))--;
 
                         } else if(temp->description[*len-2] =='n') {//Weapon
+                            //damages gope by attribute of weapon
                             *gope -= *(temp->attribute);
                             printf("You whip out the %s, swing it around, and hurt yourself in your confusion.\n", temp->name);
                             printf("Your gope level is now at %i", *gope);
@@ -430,10 +458,12 @@ int main(void) {
 
                         }
                     }
+                    // freeing temporary variable
                     free(len);
                     len = NULL;
                 }
 
+                // if usage of an item recued its count to 0, remove it from backpack and free it.
                 if(*(temp->count) == 0) {
                     temp = item_take(param, backpack);
                     item_free(temp);
@@ -445,13 +475,27 @@ int main(void) {
         }
         printf("\n\n");
 
+        // free the command and param to be allocated again at the top of the loop
         free(command);
         command = NULL;
+
         free(param);
         param = NULL;
-    } while(1);
 
-    // free everything
+    // run until player reaches final room
+    } while(*(current_room->state) != ROOM_FINAL);
+
+    // custom message depending on the player's gope
+    printf("You survived CS 230 and 240 with a final gope of %i. ", *gope);
+    printf("\n");
+    if(*gope < 16) 
+        printf("Oof, that's not a lot of gope... A W on my transcript isn't that bad, right? \n");
+    else if(*gope < 21)
+        printf("Medium gope. You did... average, yay. \n");
+    else if(*gope >= 21)
+        printf("Dear students. The professors decided to adjust the grades for the first exam. It turns out there was gope after all \n");
+
+    // free everything else that was being used
     free(gope);
     gope = NULL;
 
@@ -461,12 +505,13 @@ int main(void) {
     free(item_count);
     item_count = NULL;
     
-    item_free(backpack);
+    item_free(backpack); // recursively free all the items in backpack
+    backpack = NULL;
     
     free(buffer);
     buffer = NULL;
 
-    room_free(current_room);//recursively frees all rooms
+    room_free(current_room); // recursively frees all rooms
     current_room = NULL;
 
     return 0;

@@ -3,20 +3,40 @@
 #include <string.h>
 #include "items.h"
 
-Item *item(char* name, char* description, int count, int attribute, Item *next) {
+/*
+	CONSTRUCTOR
+
+	Constructs an item given the parameters.
+
+	Parameters:
+		char *name - string denoting the name of the item
+		char *name - string denoting the description for the item
+		int count - number of items grouped together
+		Item *next - link for the next item
+
+	Returns:
+		Item *item - dynamically allocated item with all attributes also dynamically allocated given the parameters
+*/
+Item *item(char *name, char *description, int count, int attribute, Item *next) {
 	Item *item = (Item *) malloc(sizeof(Item));
 
+	// temporary variable to store length of strings for copying purposes
 	int *len = (int *) malloc(sizeof(int));
 	*len = strlen(name);
+
+	// strings are copied over so item is self contained. 
 	item->name = (char *) malloc(((*len)+1)*sizeof(char));
 	strncpy(item->name, name, *len);
+	// manually putting null terminating character
 	item->name[*len] = '\0';
 
 	*len = strlen(description);
 	item->description = (char *) malloc((*len+1)*sizeof(char));
 	strncpy(item->description, description, *len);
 	item->description[*len] = '\0';
+	// manually putting null terminating character
 
+	// freeing temporary variable
 	free(len);
 	len = NULL;
 
@@ -30,18 +50,17 @@ Item *item(char* name, char* description, int count, int attribute, Item *next) 
 	return item;
 }
 
-char *item_name(Item *item) {
-	return item->name;
-}
+/*
+	Find the first item within the Linked List with the name specified, removes it, and returns it
 
-char *item_description(Item *item) {
-	return item->description;
-}
+	Parameters:
+		char *name - string representing the name of the item to take
+		Item *head_ptr - Item representing the "head" of the Linked List
 
-Item *item_next(Item *item) {
-	return item->next;
-}
-
+	Returns:
+		NULL - didn't find item or head was NULL
+		Item *item - Item with name specified
+*/
 Item *item_take(char *name, Item *head_ptr) {
 	if(head_ptr == NULL)
 		return NULL;
@@ -67,6 +86,13 @@ Item *item_take(char *name, Item *head_ptr) {
 	return NULL;
 }
 
+/*
+	Finds item in given linked list of items
+
+	Parameters:
+		name: name of item
+		head_ptr: head of list to search through
+*/
 Item *item_find(char *name, Item *head_ptr) {
 	if(head_ptr == NULL)
 		return NULL;

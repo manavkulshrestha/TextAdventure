@@ -1,4 +1,4 @@
-#ifndef ITEMS_H_  /* Include guard */
+#ifndef ITEMS_H_
 #define ITEMS_H_
 
 typedef struct Item {
@@ -19,4 +19,4 @@ void item_add(Item *items, Item *to_add);
 void item_print(Item *head_ptr);
 void item_free(Item *item);
 
-#endif // ITEMS_H_
+#endif
