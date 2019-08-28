@@ -14,13 +14,14 @@
 #define BUFFER_LENGTH 100
 
 /*
-    int min_num - lower bound for random number generation (inclusive)
-    int man_num - Upper bound for random number generation (inclusive)
-
     Generates a random number in range min_num and max_num
 
-    returns:
-    int *result - random number between min_num and max_num
+    Parameters:
+        min_num - lower bound for random number generation (inclusive)
+        man_num - Upper bound for random number generation (inclusive)
+
+    Returns:
+        result - random number between min_num and max_num
 */
 int *random_number(int min_num, int max_num) {
     int *result = (int *) malloc(sizeof(int));
@@ -51,15 +52,16 @@ int *random_number(int min_num, int max_num) {
 }
 
 /*
-    int *num_items - Number of items to be generated
-    int *current_room_index - Index denoting what type of room the items will be placed in
-    int *key_flag - This is modified depending on whether a Door Key item is generated for the room
-    char *item_possibilities[][][] - A pool containing all the item possibilities (name, description, attribute), ordered by room type
+    Generates a Linked List of random items (dependent on room type) to be placed in a room.
 
-    Generates a Linked List of Items to be placed in a room.
+    Parameters:
+        num_items - Number of items to be generated
+        current_room_index - Index denoting what type of room the items will be placed in
+        key_flag - This is modified depending on whether a Door Key item is generated for the room
+        item_possibilities - A pool containing all the item possibilities (name, description, attribute), ordered by room type
 
-    return:
-    Items *items - a Linked List of items which contains num_items items, chosen randomly from the pool item_possibilities, depending on the current_room_index
+    Return:
+        items - a Linked List of items which contains num_items items, chosen randomly from the pool item_possibilities, depending on the current_room_index
 */
 Item *rand_items(int *num_items, int *current_room_index, int *current_item_index, int *key_flag, char *item_possibilities[ROOM_VARIATIONS][ITEM_VARIATIONS][3]) {
     Item *items = item("","",1,-1,NULL); // Dummy starter for items
@@ -83,14 +85,16 @@ Item *rand_items(int *num_items, int *current_room_index, int *current_item_inde
 }
 
 /*
-    char *room_descriptions[] - A pool containing descriptions for all room variations
-    char *item_possibilities[][][] -  A pool containing all the item possibilities (name, description, attribute), ordered by room type
-
     Generates ROOM_COUNT number of rooms linked to eachother in random directions from the top down.
     The basic algorithm is: generate final room, then sequentially generate connections in random directions until there are no more rooms to generate
+    
+    Parameters:
+        room_descriptions - A pool containing descriptions for all room variations
+        item_possibilities -  A pool containing all the item possibilities (name, description, attribute), ordered by room type
 
-    returns:
-    Room *current_room - the final room generated (starting room)
+    
+    Returns:
+        current_room - the final room generated (starting room)
 */
 Room *room_gen(char *room_descriptions[ROOM_VARIATIONS], char *item_possibilities[ROOM_VARIATIONS][ITEM_VARIATIONS][3]) {
     int *rooms_remaining = (int *) malloc(sizeof(int));
@@ -465,6 +469,7 @@ int main(void) {
 
                 // if usage of an item recued its count to 0, remove it from backpack and free it.
                 if(*(temp->count) == 0) {
+                    (*(item_count))--;
                     temp = item_take(param, backpack);
                     item_free(temp);
                 }

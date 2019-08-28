@@ -106,6 +106,17 @@ Item *item_find(char *name, Item *head_ptr) {
 	return NULL;
 }
 
+
+
+/*
+	Adds item to given linked list of items
+
+	Parameters:
+		items: existing list of items
+		to_add: item to add
+	
+	Returns void
+*/
 void item_add(Item *items, Item *to_add) {
 	if(items == NULL)
 		return;
@@ -114,6 +125,15 @@ void item_add(Item *items, Item *to_add) {
 	items->next = to_add;
 }
 
+
+
+/*
+	Prints the contents of a given linked list of items
+
+	Parameter: head_ptr: head of linked list to print
+
+	Returns void
+*/
 void item_print(Item *head_ptr) {
 	if(head_ptr != NULL)
 		head_ptr = head_ptr->next;
@@ -130,6 +150,15 @@ void item_print(Item *head_ptr) {
 	}
 }
 
+
+
+/*
+	Frees given list of items. Used in room_free
+
+	Parameter: items: list of items to free
+
+	Returns void
+*/
 void item_free(Item *item) {
 	if(item == NULL)
 		return;

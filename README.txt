@@ -1,5 +1,7 @@
 TEXT ADVENTURE
 
+File made by makefile is "adventure"
+
 This game takes place on UMass, with interactions based on the classes CS 230 and CS 240. The game is a linear, exploration based game with various rooms
 to visit and items to use. The basic goal of the game is to maximize your player stat of "gope", which will go up or down based on choices that the player
 makes in his game time. The game will end when the player enters the final room, and will trigger certain endings based on how much gope the player was
@@ -22,3 +24,6 @@ go [DIRECTION] - Used to go through a valid (unlocked) exit. Ex. "go north"
 take [ITEM NAME] - Used to take an item from the current room and store it in the backpack (given enough space). Ex. "take Programming In C (3rd Edition)"
 drop [ITEM NAME] - Drops all counts of the item name. Ex. "drop Phone"
 use [ITEM NAME] - Uses the item you specify to either alter either your state or the room state (or just displays a snarky message). Ex. "use General Tso's Peppers"
+
+Video link:
+https://docs.google.com/document/d/1H7hHS8Oq-DyJSQ-qj1RLzBRDOe3wiUaDGZRVtDPX5NM/edit?usp=sharing

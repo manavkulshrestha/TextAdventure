@@ -1,4 +1,4 @@
-#ifndef ROOMS_H_  /* Include guard */
+#ifndef ROOMS_H_
 #define ROOMS_H_
 
 #include "items.h"
@@ -106,4 +106,4 @@ void change_state(Room *room, int delta);
 */
 void room_free(Room *room);
 
-#endif // ROOMS_H_
+#endif
